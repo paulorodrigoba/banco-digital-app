@@ -1,4 +1,0 @@
-CREATE TABLE conta_poupanca (
-    id BIGINT PRIMARY KEY,
-    FOREIGN KEY (id) REFERENCES conta(id) ON DELETE CASCADE
-);

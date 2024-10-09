@@ -1,10 +1,11 @@
 package br.com.bancodigitaldoamazonas.api.domain.endereco;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 public record DadosEndereco(
-        @NotBlank
+        @NotBlank @NotNull
         String logradouro,
         @NotBlank
         String bairro,

@@ -8,10 +8,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
-@Entity
-@Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "tipo_conta")
-public abstract class Conta {
+@Entity (name = "contas")
+public class Conta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

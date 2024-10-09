@@ -4,7 +4,8 @@ import br.com.bancodigitaldoamazonas.api.domain.endereco.Endereco;
 import jakarta.persistence.*;
 import lombok.Data;
 
-@Entity
+@Entity(name="clientes")
+
 @Data
 public class Cliente {
     @Id

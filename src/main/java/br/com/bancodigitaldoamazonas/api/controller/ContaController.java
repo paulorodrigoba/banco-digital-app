@@ -1,12 +1,18 @@
 package br.com.bancodigitaldoamazonas.api.controller;
 
 import br.com.bancodigitaldoamazonas.api.domain.conta.Conta;
+
+import br.com.bancodigitaldoamazonas.api.domain.transacao.Transacao;
+import br.com.bancodigitaldoamazonas.api.domain.transacao.TransferenciaRequest;
 import br.com.bancodigitaldoamazonas.api.service.ContaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/contas")
@@ -19,37 +25,87 @@ public class ContaController {
         this.contaService = contaService;
     }
 
-    @PostMapping("/{tipo}")
-    public ResponseEntity<Conta> criarConta(@PathVariable String tipo, @RequestBody CriarContaRequest request) {
-        Conta novaConta = contaService.criarConta(request.getClienteId(), tipo);
-        return ResponseEntity.ok(novaConta);
-    }
-
-    public static class CriarContaRequest {
-        private Long clienteId;
-
-        public Long getClienteId() {
-            return clienteId;
+    // 1. Criar uma nova conta
+    @PostMapping("/criar")
+    public ResponseEntity<?> criarConta(@RequestParam(required = false) Long clienteId) {
+        if (clienteId == null) {
+            return ResponseEntity.badRequest().body("O parâmetro 'clienteId' é obrigatório.");
         }
 
-        public void setClienteId(Long clienteId) {
-            this.clienteId = clienteId;
+        try {
+            Conta novaConta = contaService.criarConta(clienteId);
+            return ResponseEntity.created(URI.create("/contas/" + novaConta.getId())).body(novaConta);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
 
-    @PostMapping("/{id}/deposito")
-    public void depositar(@PathVariable Long id, @RequestParam BigDecimal valor) {
-        contaService.depositar(id, valor);
+    // 2. Depositar em uma conta
+    @PostMapping("/{idConta}/deposito")
+    public ResponseEntity<?> depositar(@PathVariable Long idConta, @RequestParam BigDecimal valor) {
+        try {
+            contaService.depositar(idConta, valor);
+            return ResponseEntity.ok("Depósito realizado com sucesso.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    @PostMapping("/{id}/saque")
-    public void sacar(@PathVariable Long id, @RequestParam BigDecimal valor) {
-        contaService.sacar(id, valor);
+    // 3. Sacar de uma conta
+    @PostMapping("/{idConta}/saque")
+    public ResponseEntity<?> sacar(@PathVariable Long idConta, @RequestParam BigDecimal valor) {
+        try {
+            contaService.sacar(idConta, valor);
+            return ResponseEntity.ok("Saque realizado com sucesso.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    @GetMapping("/{id}/saldo")
-    public BigDecimal consultarSaldo(@PathVariable Long id) {
-        return contaService.consultarSaldo(id);
+    // 4. Transferir via PIX
+    @PostMapping("/transferencia")
+    public ResponseEntity<?> transferirPix(@RequestBody TransferenciaRequest request) {
+        try {
+            contaService.transferirPix(request.idContaOrigem(), request.idContaDestino(), request.valor());
+            return ResponseEntity.ok("Transferência PIX realizada com sucesso.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // 5. Consultar saldo
+    @GetMapping("/{idConta}/saldo")
+    public ResponseEntity<BigDecimal> consultarSaldo(@PathVariable Long idConta) {
+        try {
+            BigDecimal saldo = contaService.consultarSaldo(idConta);
+            return ResponseEntity.ok(saldo);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    // 6. Consultar extrato bancário
+    @GetMapping("/{idConta}/extrato")
+    public ResponseEntity<List<Transacao>> extratoBancario(@PathVariable Long idConta) {
+        try {
+            List<Transacao> extrato = contaService.extratoBancario(idConta);
+            return ResponseEntity.ok(extrato);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    // 7. Listar contas por cliente
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<List<Conta>> listarContasPorCliente(@PathVariable Long clienteId) {
+        try {
+            List<Conta> contas = contaService.listarContasPorCliente(clienteId);
+            return ResponseEntity.ok(contas);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 }
